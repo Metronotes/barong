@@ -369,6 +369,41 @@ describe API::V2::Admin::Users do
         expect(api_key2.reload.state).to eq 'inactive'
       end
     end
+
+    context 'superadmin user' do
+      let(:do_request) { put '/api/v2/admin/users', params: params, headers: auth_header }
+      let(:test_user) { create(:user, role: "superadmin") }
+  
+      let(:params) do
+        {
+          uid: experimental_user.uid,
+          email: new_email,
+        }
+      end
+      let(:new_email) { '' }
+      context "when email is blank" do
+        it 'renders an error' do
+          do_request
+          expect(response.status).to eq(422)
+          expect_body.to eq(errors: ["admin.user.empty_email"])
+        end
+      end
+      context 'when email is invalid' do
+        let(:new_email) { 'bad_format' }
+        it 'renders an error' do
+          do_request
+          expect_status_to_eq 422
+          expect_body.to eq(errors: ["email.invalid"])
+      end
+      end
+      context 'when email is valid' do
+        let(:new_email) { 'valid.email@gmail.com' }
+        it 'change an email' do
+          do_request
+          expect_status_to_eq 200
+        end
+      end
+    end
   end
 
   describe 'Get /api/v2/admin/users/:uid' do
